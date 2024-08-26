@@ -18,7 +18,7 @@ public static class A01_MultiAgent_Critic_ToM_Argument_CheatSheet
         var openAIModel = "gpt-4o-mini";
         var openaiClient = new OpenAIClient(openAIKey);
 
-        var tokenCountMiddleware = new CountTokenMiddleware();
+        //var tokenCountMiddleware = new CountTokenMiddleware();
         var openaiMessageConnector = new OpenAIChatRequestMessageConnector();
 
         await PrintTitle();
@@ -49,19 +49,31 @@ public static class A01_MultiAgent_Critic_ToM_Argument_CheatSheet
             name: "ArgumentaryWriter",
             modelName: openAIModel,
             systemMessage: $"""
-                Your name is ArgumentaryWriter, a Persuasiveness Expert. 
+                Your name is ArgumentaryWriter, a Persuasiveness Expert.
+
+                # Context
+                ## Company Description
+                {companyDescription}
+
+                ## Conference Summary
+                {conferenceSummary}
+                
+                ## Sheila's profile
+                {workerProfile}
+                
+                ## John's profile
+                {teamLeadProfile}
+
+                ## Task
                 Your task is to create a convincing argumentary document, to have a spoken in-person conversation, from Sheila's point of view to persuade her Team Lead, John, to allow her to attend a conference. 
-                Worker profile: {workerProfile}
-                Company Description: {companyDescription}
-                Team Lead profile: {teamLeadProfile}
-                Conference Summary: {conferenceSummary}
+                
                 Write the argumentary with ideas to start and lead the conversation, including at the end, a list of several possible questions from John and perfect responses to them from Sheila.
                 Also, take any feedback from CriticTeamLead seriously and make necessary changes to the argumentary.
                 """,
             temperature: 0.6f,
             maxTokens: 1200)
-            .RegisterMiddleware(tokenCountMiddleware)
-            .RegisterMiddleware(openaiMessageConnector)
+            //.RegisterMiddleware(tokenCountMiddleware)
+            .RegisterMessageConnector()
             .RegisterPrintMessage();
 
         // Setup CriticTeamLead Agent
@@ -71,12 +83,23 @@ public static class A01_MultiAgent_Critic_ToM_Argument_CheatSheet
             modelName: openAIModel,
             systemMessage: $"""
                 Your name is CriticTeamLead, an expert in understanding team dynamics and leadership perspectives.
-                Your task is to critique the argument written by ArgumentaryWriter from the perspective of John, Sheila's Team Lead.
-                Worker profile: {workerProfile}
-                Company Description: {companyDescription}
-                Team Lead profile: {teamLeadProfile}
-                Conference Summary: {conferenceSummary}
+
+                # Context
+                ## Company Description
+                {companyDescription}
+                
+                ## Conference Summary
+                {conferenceSummary}
+                
+                ## Sheila's profile
+                {workerProfile}
+                
+                ## John's profile
+                {teamLeadProfile}
+
+                ## Task
                 Provide suggestions to improve the argumentary to make it more persuasive and complete. When the argumentary is solid, and there is no suggestion to improve it in excess, respond with 'TERMINATE'.
+                
                 If the Argumentary is already solid and convincing, like 80-90% perfect, you can respond with 'TERMINATE' only.
                 Do not write any part of the argumentary, even for reference. Only provide feedback and suggestions if any.
                 If you provide ANY feedback, DO NOT, I repeat, DO NOT respond or add 'TERMINATE' in your feedback.
@@ -87,8 +110,8 @@ public static class A01_MultiAgent_Critic_ToM_Argument_CheatSheet
                 """,
             temperature: 0.3f,
             maxTokens: 1200)
-            .RegisterMiddleware(tokenCountMiddleware)
-            .RegisterMiddleware(openaiMessageConnector)
+            //.RegisterMiddleware(tokenCountMiddleware)
+            .RegisterMessageConnector()
             .RegisterPrintMessage();
 
         var chatHistory = new List<IMessage>
@@ -160,5 +183,28 @@ public static class A01_MultiAgent_Critic_ToM_Argument_CheatSheet
                           |___/                                      
                                           ArguCraft by José L. Latorre              
             """);
+    }
+
+    class CountTokenMiddleware : IMiddleware
+    {
+        private readonly List<ChatCompletions> messages = new();
+        public string? Name => nameof(CountTokenMiddleware);
+
+        public int GetTokenCount()
+        {
+            return messages.Sum(m => m.Usage.CompletionTokens);
+        }
+
+        public async Task<IMessage> InvokeAsync(MiddlewareContext context, IAgent agent, CancellationToken cancellationToken = default)
+        {
+            var reply = await agent.GenerateReplyAsync(context.Messages, context.Options, cancellationToken: cancellationToken);
+
+            if (reply is IMessage<ChatCompletions> message)
+            {
+                messages.Add(message.Content);
+            }
+
+            return reply;
+        }
     }
 }
