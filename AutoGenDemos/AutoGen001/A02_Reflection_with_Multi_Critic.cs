@@ -7,7 +7,6 @@ using FluentAssertions;
 
 namespace AutoGen001;
 
-
 // NOTE: Originally based on the example code from LittleLittleCloud at
 // https://github.com/LittleLittleCloud/AI-Agentic-Design-Patterns-with-AutoGen.Net/tree/main/L3_Reflection_and_Blogpost_Writing
 public static class A02_Reflection_with_Multi_Critic
@@ -15,6 +14,7 @@ public static class A02_Reflection_with_Multi_Critic
     public async static Task Execute()
     {
         var openAIKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("Please set the OPENAI_API_KEY environment variable.");
+        //
         var openAIModel = "gpt-4o-mini";
         var openaiClient = new OpenAIClient(openAIKey);
 

@@ -118,11 +118,12 @@ public static class A01_MultiAgent_Critic_ToM_Argument_CheatSheet
         {
             new TextMessage(Role.User, "Please create an argumentary document for Sheila to convince John to attend the conference.", from: criticTeamLead.Name)
         };
+        int i = 1;
 
         Console.ForegroundColor = ConsoleColor.White;
         Console.Write("\nAssistant ArgumentaryWriter > \n");
+        Console.WriteLine($"Turn {i}");
 
-        int i = 0;
         IMessage? lastMessageBeforeTerminate = null;
         try
         {
@@ -132,7 +133,7 @@ public static class A01_MultiAgent_Critic_ToM_Argument_CheatSheet
                 maxRound: 16))
             {
                 i++;
-                Console.WriteLine($"Round {i}");
+                Console.WriteLine($"Turn {i}");
                 chatHistory.Add(msg);
                 
                 if (msg.GetContent()?.ToLower().Contains("terminate") is true)
